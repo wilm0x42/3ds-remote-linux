@@ -1,7 +1,7 @@
 #ifndef _NANOJPEG_H
 #define _NANOJPEG_H
 
-// nj_result_t: Result codes for njDecode().
+/* nj_result_t: Result codes for njDecode().*/
 typedef enum _nj_result {
     NJ_OK = 0,        // no error, decoding successful
     NJ_NO_JPEG,       // not a JPEG file
