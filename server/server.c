@@ -35,7 +35,12 @@ long int loadFile(char** buf, const char* filename)
         fclose(fp);
         return 0;
     }
-    fread(*buf, 1, fsize, fp);
+    if (fread(*buf, 1, fsize, fp) < fsize)
+    {
+        free(*buf);
+        *buf = NULL;
+        return 0;
+    }
     
     fclose(fp);
     return fsize;
@@ -45,7 +50,7 @@ void updateFile()
 {
     fileId++;
     free(fileData);
-    system("./getScreencap.sh");
+    int ret = system("./getScreencap.sh");
     fileSize = loadFile(&fileData, "work/frame.jpg");
     if (!fileSize || !fileData)
         return;
@@ -205,7 +210,7 @@ int main(void)
             getMouseStr(recvBuf[5], clickBuf, 80);
             snprintf(mouseCmdBuf, 256, "xte \"mousermove %hd %hd\" %s", mouseX, mouseY, clickBuf);
             printf("MOUSE: %hd %hd\n", mouseX, mouseY);
-            system(mouseCmdBuf);
+            int ret = system(mouseCmdBuf);
             break;
         }
         case 0x05://Arrow key event
@@ -218,7 +223,7 @@ int main(void)
             if (recvBuf[1] & 0x02) strncat(cmdBuf, "\"key Down\" ", 256);
             if (recvBuf[1] & 0x04) strncat(cmdBuf, "\"key Left\" ", 256);
             if (recvBuf[1] & 0x08) strncat(cmdBuf, "\"key Right\" ", 256);
-            system(cmdBuf);
+            int ret = system(cmdBuf);
             break;
         }
         default:

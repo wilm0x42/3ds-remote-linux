@@ -1,6 +1,6 @@
 CFLAGS = -O2
 
-server: server.cpp
+server: server.c
 
 clean:
 	@rm server
