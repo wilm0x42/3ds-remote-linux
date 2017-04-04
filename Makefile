@@ -131,7 +131,7 @@ ifneq ($(ROMFS),)
 	export _3DSXFLAGS += --romfs=$(CURDIR)/$(ROMFS)
 endif
 
-.PHONY: $(BUILD) clean all
+.PHONY: $(BUILD) clean all server clean-server
 
 #---------------------------------------------------------------------------------
 all: $(BUILD)
@@ -144,7 +144,6 @@ $(BUILD):
 clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf
-
 
 #---------------------------------------------------------------------------------
 else

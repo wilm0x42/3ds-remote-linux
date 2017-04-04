@@ -1,0 +1,7 @@
+build
+*.3dsx
+*.smdh
+*.elf
+server/server
+server/frame.jpg
+server/framergb.bmp
