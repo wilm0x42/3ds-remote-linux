@@ -1,5 +1,8 @@
 # 3ds-remote-linux
 
+Tool to control linux computer from a 3ds. Basically like VNC, RDP, etc.
+Currently, it can only manage about 2-3 fps, tops.
+
 It goes without saying, but the the server simply isn't secure,
 so don't do anything stupid with it.
 

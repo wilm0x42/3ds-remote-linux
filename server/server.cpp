@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define CHUNKSIZE 1024
+#define CHUNKSIZE 600
 
 
 char* fileData = NULL;
@@ -192,9 +192,6 @@ int main(void)
         case 0x04://Mouse event
         {
             char mouseCmdBuf[256];
-            FILE* dump = fopen("mouse.bin", "w");
-            fwrite(recvBuf, 1, sizeof(recvBuf), dump);
-            fclose(dump);
             char clickBuf[80];
             short mouseX, mouseY;
             memcpy(&mouseX, recvBuf+1, 2);

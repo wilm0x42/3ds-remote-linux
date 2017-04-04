@@ -1,88 +1,74 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
-#include <stdarg.h>
 
 #include <fcntl.h>
-
 #include <sys/types.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "global.h"
+#include "nanojpeg.h"
+#include "net.h"
+
 #include <3ds.h>
 
-//#include "lodepng.h"
-#include "nanojpeg.h"
-
-#define FB_SIZE (320*240*3)
 
 #define SOC_ALIGN       0x1000
 #define SOC_BUFFERSIZE  0x100000
 
+
 static u32 *SOC_buffer = NULL;
+
 int sock;
+struct sockaddr_in sa;
 
-static bool logging = true;
-#define printf printLog
-
-int printLog(const char* format, ...)
-{
-	if (!logging)
-	{
-		usleep(500);
-		return 0;
-	}
-    va_list args;
-
-    va_start(args, format);
-    int ret = vprintf(format, args);
-
-    va_end(args);
-    return ret;
-}
-
-void failExit(const char* msg)
-{
-	logging = true;
-    printf("Error (%d): %s\n", errno, msg);
-    printf("Press start to exit.\n");
-    
-    while (aptMainLoop())
-	{
-	    gspWaitForVBlank();
-		hidScanInput();
-		u32 kDown = hidKeysDown();
-		if (kDown & KEY_START) break;
-	}
-	close(sock);
-	exit(0);
-}
-
-void pauseExit()
-{
-	logging = true;
-    printf("Halted (%d)\n", errno);
-    printf("Press start to exit.\n");
-    
-    while (aptMainLoop())
-	{
-	    gspWaitForVBlank();
-		hidScanInput();
-		u32 kDown = hidKeysDown();
-		if (kDown & KEY_START) break;
-	}
-	return;
-}
 
 void socShutdown()
 {
 	printf("waiting for socExit...\n");
 	socExit();
+}
+
+void net_init()
+{
+	// allocate buffer for SOC service
+	SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
+	if(SOC_buffer == NULL)
+	{
+		failExit("memalign failed to allocate");
+	}
+	// Now intialise soc:u service
+	if (socInit(SOC_buffer, SOC_BUFFERSIZE) != 0)
+	{
+    	failExit("socInit failed");
+	}
+	// register socShutdown to run at exit
+	atexit(socShutdown);
+
+
+    // create an Internet, datagram, socket using UDP
+    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock == -1)
+    {
+        /* if socket failed to initialize, exit */
+        failExit("Error Creating Socket");
+    }
+
+    memset(&sa, 0, sizeof(sa));// Zero out socket address
+    
+    sa.sin_family = AF_INET;// The address is IPv4
+    sa.sin_addr.s_addr = inet_addr("10.0.0.2");// IPv4 adresses is a uint32_t, convert a string representation of the octets to the appropriate value
+    sa.sin_port = htons(55550);// sockets are unsigned shorts, htons(x) ensures x is in network byte order, set the port to 55554
+    //bytes_sent = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&sa, sizeof(sa));
+    if (connect(sock, (struct sockaddr*)&sa, sizeof(sa)))
+        failExit("Connect Failed");
 }
 
 bool allChunks(bool* chunks, uint16_t chunkCount, uint16_t* nextChunk)
@@ -284,126 +270,4 @@ void sendMouseEvent(int sock, s16 x, s16 y, char click)
     sendBuf[1+2+2] = click;
     
     send(sock, sendBuf, sizeof(sendBuf), 0);
-}
-
-int main(int argc, char **argv)
-{
-    gfxInitDefault();
-    atexit(gfxExit);
-	consoleInit(GFX_TOP, NULL);
-	gfxSetDoubleBuffering(GFX_BOTTOM, false);
-	u8* fb = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
-	memset(fb, 0, FB_SIZE);
-	printf("Started. Let's go.\n");
-	atexit(pauseExit);
-	
-	
-	// allocate buffer for SOC service
-	SOC_buffer = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
-	if(SOC_buffer == NULL)
-	{
-		failExit("memalign failed to allocate");
-	}
-	// Now intialise soc:u service
-	if (socInit(SOC_buffer, SOC_BUFFERSIZE) != 0)
-	{
-    	failExit("socInit failed");
-	}
-	// register socShutdown to run at exit
-	atexit(socShutdown);
-	
-
-	int sock;
-    struct sockaddr_in sa;
-    //socklen_t saLen;
-
-    // create an Internet, datagram, socket using UDP
-    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (sock == -1)
-    {
-        /* if socket failed to initialize, exit */
-        failExit("Error Creating Socket");
-    }
-
-    memset(&sa, 0, sizeof(sa));// Zero out socket address
-    
-    sa.sin_family = AF_INET;// The address is IPv4
-    sa.sin_addr.s_addr = inet_addr("10.0.0.2");// IPv4 adresses is a uint32_t, convert a string representation of the octets to the appropriate value
-    sa.sin_port = htons(55550);// sockets are unsigned shorts, htons(x) ensures x is in network byte order, set the port to 55554
-    //bytes_sent = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&sa, sizeof(sa));
-    if (connect(sock, (struct sockaddr*)&sa, sizeof(sa)))
-        failExit("Connect Failed");
-        
-        
-    njInit();
-        
-
-    printf("Entering main loop...\n");
-	while (aptMainLoop())
-	{
-		hidScanInput();
-		u32 kDown = hidKeysDown();
-		u32 kHeld = hidKeysHeld();
-		
-		circlePosition cPos;
-		hidCircleRead(&cPos);
-	
-	
-        if (/* framesRunning % 20 == 0*/true)
-        {
-            printf("Receiving frame...\n");
-            gfxFlushBuffers();
-		    gfxSwapBuffers();
-            getFrame(sock, fb);
-            printf("Done\n");
-        }
-        if (kDown & KEY_START)
-        {
-            close(sock);
-            exit(0);
-        }
-		if (kDown & KEY_SELECT)
-		{
-			(logging)? fprintf(stdout, "Disabling logging\n"):
-					   fprintf(stdout, "Enabling logging\n");
-			logging = !logging;
-        }
-        
-        u8 mouseBtns = 0;
-        if (kDown & KEY_A) mouseBtns |= 0x01;//l
-        if (kDown & KEY_Y) mouseBtns |= 0x02;//r
-        if (kDown & KEY_B) mouseBtns |= 0x04;//double l
-        s16 sendX, sendY;
-        int divide = (kHeld & KEY_X)? 4: 8;
-        sendX = (cPos.dx>15||cPos.dx<-15)?cPos.dx/divide : 0,
-        sendY = (cPos.dy>15||cPos.dy<-15)?cPos.dy/divide : 0,
-        printf("Sending mouse event: %hd, %hd, %hhu\n", sendX, sendY, mouseBtns);
-        sendMouseEvent(sock, sendX, sendY, mouseBtns);
-        printf("Done\n");
-        
-        u8 dpadBuf[2] = {0x05, 0};
-        if (kHeld & KEY_DUP) dpadBuf[1] |= 0x01;
-        if (kHeld & KEY_DDOWN) dpadBuf[1] |= 0x02;
-        if (kHeld & KEY_DLEFT) dpadBuf[1] |= 0x04;
-        if (kHeld & KEY_DRIGHT) dpadBuf[1] |= 0x08;
-        if (dpadBuf[1])
-        {
-        	printf("Sending arrow keys.\n");
-        	send(sock, dpadBuf, 2, 0);
-        }
-
-        // Flush and swap framebuffers
-		gfxFlushBuffers();
-		gfxSwapBuffers();
-
-		//Wait for VBlank
-		gspWaitForVBlank();
-	}
-	
-	// Exit services
-	logging = true;
-	gfxExit();
-	socShutdown();
-	printf("return 0...\n");
-	return 0;
 }
