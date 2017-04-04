@@ -1,6 +1,9 @@
 #ifndef _NANOJPEG_H
 #define _NANOJPEG_H
 
+//This is a hack to mabye make this not be recgnized as objective-c
+//#include <stdio.h>
+
 /* nj_result_t: Result codes for njDecode().*/
 typedef enum _nj_result {
     NJ_OK = 0,        // no error, decoding successful
