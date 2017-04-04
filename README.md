@@ -11,8 +11,8 @@ make the "server/work" folder RAM based. This can be done with:
 `sudo mount -t tmpfs -o size=50m tmpfs ./server/work`
 
 ## Random info
- * Uses port 55550 UDP
- * NanoJpeg, courtesy of KeyJ. (License in source file)
+ * Runs on port 55550 UDP
+ * Uses NanoJpeg, by KeyJ. (License in source file)
  * JPEG compression can be edited live by editing the "quality" value in server/getScreencap.sh
  * devkitpro/ctrulib! Thx WinterMute/smea!
  * The mouse pointer graphic is from the GTK theme "greybird"

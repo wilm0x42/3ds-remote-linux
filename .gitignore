@@ -1,7 +1,7 @@
-build/
+/build/
 *.3dsx
 *.smdh
 *.elf
-server/server
-server/work/*.jpg
-server/work/*.bmp
+/server/server
+/server/work/*.jpg
+/server/work/*.bmp
