@@ -1,8 +1,9 @@
 #ifndef _NANOJPEG_H
 #define _NANOJPEG_H
 
-//This is a hack to mabye make this not be recgnized as objective-c
-//#include <stdio.h>
+#ifdef _HACK_REQUIRING_PREPROCESSOR_MEMES
+#include <stdio.h>
+#endif
 
 /* nj_result_t: Result codes for njDecode().*/
 typedef enum _nj_result {
