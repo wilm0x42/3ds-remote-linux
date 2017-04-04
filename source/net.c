@@ -64,9 +64,8 @@ void net_init()
     memset(&sa, 0, sizeof(sa));// Zero out socket address
     
     sa.sin_family = AF_INET;// The address is IPv4
-    sa.sin_addr.s_addr = inet_addr("10.0.0.2");// IPv4 adresses is a uint32_t, convert a string representation of the octets to the appropriate value
-    sa.sin_port = htons(55550);// sockets are unsigned shorts, htons(x) ensures x is in network byte order, set the port to 55554
-    //bytes_sent = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&sa, sizeof(sa));
+    sa.sin_addr.s_addr = inet_addr("10.0.0.2");
+    sa.sin_port = htons(55550);
     if (connect(sock, (struct sockaddr*)&sa, sizeof(sa)))
         failExit("Connect Failed");
 }
@@ -95,13 +94,14 @@ bool requestChunk(int sock, char* buf, uint16_t chunkSize, uint16_t whichChunk, 
     
     if (send(sock, rqBuf, sizeof(rqBuf), 0) < 0)
         return false;
-    for (int n = 0; n < 5; n++)
+    for (int n = 0; n < 3; n++)
     {
-        if (n == 3)
+        usleep(10000);
+        /*if (n == 3)
         {
             send(sock, rqBuf, sizeof(rqBuf), 0);
             printf("Resending request...\n");
-        }
+        }*/
         
         int recvSize = recv(sock, buf, chunkSize+5, MSG_DONTWAIT);
         if (recvSize == 0)
@@ -134,7 +134,7 @@ bool requestChunk(int sock, char* buf, uint16_t chunkSize, uint16_t whichChunk, 
     return true;
 }
 
-bool getFrame(int sock, u8* fb)
+bool getFrame(int sock, u8* fb, int s_w, int s_h)
 {
     char fileUpdateRqCode = 0x01;
     printf("Sending file update request...\n");
@@ -151,16 +151,16 @@ bool getFrame(int sock, u8* fb)
         
     printf("Receiving file header...\n");
     int attempts;
-    for (attempts = 0; attempts < 50; attempts++)
+    for (attempts = 0; attempts < 30; attempts++)
     {
-    	usleep(32000);
+    	usleep(50000);
         printf("Loop (%d)\n", errno);
         char recvBuf[9];
         memset(recvBuf, 0xFF, 9);
         int recvSize = recv(sock, recvBuf, 9, MSG_DONTWAIT);
         if (recvSize < 0)
         {
-            printf("Failed to receive file update. (%d == %s)\n", errno, strerror(errno));
+            printLog(2, "Failed to receive file update. (%d == %s)\n", errno, strerror(errno));
             return false;
         }
         if (recvSize == 9 && recvBuf[0] == 0x01)
@@ -178,7 +178,7 @@ bool getFrame(int sock, u8* fb)
         }
         else if (recvSize > 0)
         {
-            printf("Received unknown packet of %d bytes\n", recvSize);
+            printLog(2, "Received unknown packet of %d bytes\n", recvSize);
             return false;
         }
         if (recvSize < 0)
@@ -231,13 +231,16 @@ bool getFrame(int sock, u8* fb)
     	printf("Done\n");
         free(fileBuf);
         
-        printf("Copying fb...\n");
-        if (njGetWidth() == 240 && njGetHeight() == 320
+        printf("Copying to fb...\n");
+        if (njGetWidth() == s_h && njGetHeight() == s_w
             && njIsColor() && !decodeFail)
         {
         	memcpy(fb, njGetImage(), njGetImageSize());
         }
-        else printf("Error: Received image not 240x320\n");
+        else printf("Error decoding image (%dx%d, %s)\n",
+		            njGetWidth(),
+		            njGetHeight(),
+		            (decodeFail)? "fail": "success");
         printf("Done\n");
         
         njDone();

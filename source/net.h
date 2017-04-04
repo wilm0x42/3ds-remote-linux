@@ -4,14 +4,11 @@
 #include <3ds.h>
 
 
-#define FB_SIZE (320*240*3)
-
-
 extern int sock;
 
 
 void net_init();
-bool getFrame(int sock, u8* fb);
+bool getFrame(int sock, u8* fb, int s_w, int s_h);
 void sendMouseEvent(int sock, s16 x, s16 y, char click);
 
 #endif

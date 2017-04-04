@@ -19,7 +19,11 @@ uint16_t fileId = 0;
 long int loadFile(char** buf, const char* filename)
 {
     FILE* fp = fopen(filename, "r");
-    if (!fp) return 0;
+    if (!fp)
+    {
+        printf("Error: couldn't open file \"%s\"\n", filename);
+        return 0;
+    }
     
     fseek(fp, 0, SEEK_END);
     long int fsize = ftell(fp);
@@ -42,7 +46,7 @@ void updateFile()
     fileId++;
     free(fileData);
     system("./getScreencap.sh");
-    fileSize = loadFile(&fileData, "frame.jpg");
+    fileSize = loadFile(&fileData, "work/frame.jpg");
     if (!fileSize || !fileData)
         return;
 }

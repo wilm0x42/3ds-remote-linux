@@ -1,10 +1,14 @@
 # 3ds-remote-linux
 
 Tool to control linux computer from a 3ds. Basically like VNC, RDP, etc.
-Currently, it can only manage about 2-3 fps, tops.
+Currently, it can only manage about 2 fps, tops.
 
 It goes without saying, but the the server simply isn't secure,
 so don't do anything stupid with it.
+
+For optimal server performance, you should probably
+make the "server/work" folder RAM based. This can be done with:
+ sudo mount -t tmpfs -o size=50m tmpfs ./server/work
 
 ## Random info
  * Uses port 55550 UDP
@@ -14,6 +18,7 @@ so don't do anything stupid with it.
  * The mouse pointer graphic is from the GTK theme "greybird"
  * Uses xautomation and xdotool for input events
  * Image encoding is done with image magick
+ * The server must be running within the server folder
 
 ## Controls
  * A - Left Click

@@ -5,3 +5,4 @@ build
 server/server
 server/frame.jpg
 server/framergb.bmp
+server/work/*

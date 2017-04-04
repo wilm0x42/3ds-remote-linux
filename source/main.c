@@ -20,22 +20,27 @@
 #include "net.h"
 #include "nanojpeg.h"
 
+
+#define SCREEN_WIDTH 400
+#define SCREEN_HEIGHT 240
+#define FB_SIZE (SCREEN_WIDTH*SCREEN_HEIGHT*3)
+
+
 int main(int argc, char **argv)
 {
     gfxInitDefault();
     atexit(gfxExit);
-	consoleInit(GFX_TOP, NULL);
-	gfxSetDoubleBuffering(GFX_BOTTOM, false);
-	u8* fb = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
+	consoleInit(GFX_BOTTOM, NULL);
+	gfxSetDoubleBuffering(GFX_TOP, false);
+	u8* fb = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
 	memset(fb, 0, FB_SIZE);
-	printf("Started. Here we go!.\n");
 	atexit(pauseExit);
 
     net_init();
 	
     njInit();
 
-    printf("Entering main loop...\n");
+    printLog(0, "Entering main loop...\n");
 	while (aptMainLoop())
 	{
 		hidScanInput();
@@ -48,23 +53,18 @@ int main(int argc, char **argv)
 	
         if (/* framesRunning % 20 == 0*/true)
         {
-            printf("Receiving frame...\n");
-            gfxFlushBuffers();
-		    gfxSwapBuffers();
-            getFrame(sock, fb);
-            printf("Done\n");
+            printLog(1, "Receiving frame...\n");
+            if (getFrame(sock, fb, SCREEN_WIDTH, SCREEN_HEIGHT))
+                printLog(1, "\x1b[32mSuccess\x1b[37m\n");
+            else
+                printLog(1, "\x1b[31mFailure\x1b[37m\n");
         }
         if (kDown & KEY_START)
         {
             close(sock);
             exit(0);
         }
-		if (kDown & KEY_SELECT)
-		{
-			(logging)? fprintf(stdout, "Disabling logging\n"):
-					   fprintf(stdout, "Enabling logging\n");
-			logging = !logging;
-        }
+		
         
         u8 mouseBtns = 0;
         if (kDown & KEY_A) mouseBtns |= 0x01;//l
@@ -78,15 +78,27 @@ int main(int argc, char **argv)
         sendMouseEvent(sock, sendX, sendY, mouseBtns);
         printf("Done\n");
         
-        u8 dpadBuf[2] = {0x05, 0};
-        if (kHeld & KEY_DUP) dpadBuf[1] |= 0x01;
-        if (kHeld & KEY_DDOWN) dpadBuf[1] |= 0x02;
-        if (kHeld & KEY_DLEFT) dpadBuf[1] |= 0x04;
-        if (kHeld & KEY_DRIGHT) dpadBuf[1] |= 0x08;
-        if (dpadBuf[1])
+        if (!(kHeld & KEY_R))
         {
-        	printf("Sending arrow keys.\n");
-        	send(sock, dpadBuf, 2, 0);
+            u8 dpadBuf[2] = {0x05, 0};
+            if (kHeld & KEY_DUP) dpadBuf[1] |= 0x01;
+            if (kHeld & KEY_DDOWN) dpadBuf[1] |= 0x02;
+            if (kHeld & KEY_DLEFT) dpadBuf[1] |= 0x04;
+            if (kHeld & KEY_DRIGHT) dpadBuf[1] |= 0x08;
+            if (dpadBuf[1])
+            {
+            	printf("Sending arrow keys.\n");
+            	send(sock, dpadBuf, 2, 0);
+            }
+        }
+        else
+        {
+            if (kDown & KEY_RIGHT && logging_verbosity < 3)
+                logging_verbosity++;
+            if (kDown & KEY_LEFT && logging_verbosity > 0)
+                logging_verbosity--;
+                
+            printLog(0, "Logging verbosity: %d\n", logging_verbosity);
         }
 
         // Flush and swap framebuffers
@@ -98,8 +110,7 @@ int main(int argc, char **argv)
 	}
 	
 	// Exit services
-	logging = true;
 	gfxExit();
-	printf("Exiting...\n");
+	printLog(0, "Exiting...\n");
 	return 0;
 }
