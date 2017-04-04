@@ -31,4 +31,4 @@ X | Speed up mouse movement
 Circle pad | Move mouse
 D Pad | Arrow keys
 Start | Exit
- * Select - Toggle logging
+R + Dpad L/R | Change logging verbosity
