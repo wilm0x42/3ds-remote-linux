@@ -18,6 +18,8 @@
 
 #include "global.h"
 #include "net.h"
+#include "ini.h"
+
 #include "nanojpeg.h"
 
 
@@ -36,6 +38,9 @@ int main(int argc, char **argv)
 	memset(fb, 0, FB_SIZE);
 	atexit(pauseExit);
 
+    ini_init();
+    atexit(ini_exit());
+    
     net_init();
 	
     njInit();
