@@ -14,8 +14,10 @@
 #include <arpa/inet.h>
 
 #include "global.h"
-#include "nanojpeg.h"
 #include "net.h"
+#include "ini.h"
+
+#include "nanojpeg.h"
 
 #include <3ds.h>
 
@@ -30,12 +32,6 @@ int sock;
 struct sockaddr_in sa;
 
 
-void socShutdown()
-{
-	printf("waiting for socExit...\n");
-	socExit();
-}
-
 void net_init()
 {
 	// allocate buffer for SOC service
@@ -49,8 +45,6 @@ void net_init()
 	{
     	failExit("socInit failed");
 	}
-	// register socShutdown to run at exit
-	atexit(socShutdown);
 
 
     // create an Internet, datagram, socket using UDP
@@ -64,10 +58,17 @@ void net_init()
     memset(&sa, 0, sizeof(sa));// Zero out socket address
     
     sa.sin_family = AF_INET;// The address is IPv4
-    sa.sin_addr.s_addr = inet_addr("10.0.0.2");
-    sa.sin_port = htons(55550);
+    sa.sin_addr.s_addr = inet_addr("10.0.0.2");//TODO: get this from .ini
+    sa.sin_port = htons(ini_getParameter("port"));
     if (connect(sock, (struct sockaddr*)&sa, sizeof(sa)))
         failExit("Connect Failed");
+}
+
+void net_exit()
+{
+    close(sock);
+    printf("waiting for socExit...\n");
+	socExit();
 }
 
 bool allChunks(bool* chunks, uint16_t chunkCount, uint16_t* nextChunk)

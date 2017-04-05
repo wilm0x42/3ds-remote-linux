@@ -22,28 +22,45 @@
 
 #include "nanojpeg.h"
 
+#include "gfx/gfx_background.h"
 
-#define SCREEN_WIDTH 400
-#define SCREEN_HEIGHT 240
-#define FB_SIZE (SCREEN_WIDTH*SCREEN_HEIGHT*3)
+
+#define TOP_WIDTH 400
+#define TOP_HEIGHT 240
+#define TOP_FB_SIZE (TOP_WIDTH*TOP_HEIGHT*3)
+
+#define BOTTOM_WIDTH 320
+#define BOTTOM_HEIGHT 240
+#define BOTTOM_FB_SIZE (BOTTOM_WIDTH*BOTTOM_HEIGHT*3)
 
 
 int main(int argc, char **argv)
 {
     gfxInitDefault();
     atexit(gfxExit);
-	consoleInit(GFX_BOTTOM, NULL);
-	gfxSetDoubleBuffering(GFX_TOP, false);
-	u8* fb = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
-	memset(fb, 0, FB_SIZE);
-	atexit(pauseExit);
-
-    ini_init();
-    atexit(ini_exit());
     
-    net_init();
+    PrintConsole consoleOut;
+	consoleInit(GFX_BOTTOM, &consoleOut);
+	consoleSetWindow(&consoleOut, 18, 16, 22, 14);
 	
-    njInit();
+	gfxSetDoubleBuffering(GFX_TOP, false);
+	u8* fbTop = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
+	memset(fbTop, 0, TOP_FB_SIZE);
+	
+	gfxSetDoubleBuffering(GFX_BOTTOM, false);
+	u8* fbBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
+	memset(fbBottom, 0xFF, BOTTOM_FB_SIZE);
+	
+
+    ini_init();//Initialize ini handler
+    atexit(ini_exit);
+    
+    net_init();//Initialize net
+    atexit(net_exit);
+	
+    njInit();//Initialize NanoJpeg
+    
+    atexit(pauseExit);
 
     printLog(0, "Entering main loop...\n");
 	while (aptMainLoop())
@@ -54,22 +71,21 @@ int main(int argc, char **argv)
 		
 		circlePosition cPos;
 		hidCircleRead(&cPos);
+		
+		
+		memcpy(fbBottom, gfx_background, BOTTOM_FB_SIZE);
 	
-	
-        if (/* framesRunning % 20 == 0*/true)
-        {
-            printLog(1, "Receiving frame...\n");
-            if (getFrame(sock, fb, SCREEN_WIDTH, SCREEN_HEIGHT))
-                printLog(1, "\x1b[32mSuccess\x1b[37m\n");
-            else
-                printLog(1, "\x1b[31mFailure\x1b[37m\n");
-        }
+        printLog(1, "Receiving frame...\n");
+        if (getFrame(sock, fbTop, TOP_WIDTH, TOP_HEIGHT))
+            printLog(1, "\x1b[32mSuccess\x1b[37m\n");
+        else
+            printLog(1, "\x1b[31mFailure\x1b[37m\n");
+        
         if (kDown & KEY_START)
         {
             close(sock);
             exit(0);
         }
-		
         
         u8 mouseBtns = 0;
         if (kDown & KEY_A) mouseBtns |= 0x01;//l
@@ -114,8 +130,6 @@ int main(int argc, char **argv)
 		gspWaitForVBlank();
 	}
 	
-	// Exit services
-	gfxExit();
 	printLog(0, "Exiting...\n");
 	return 0;
 }
