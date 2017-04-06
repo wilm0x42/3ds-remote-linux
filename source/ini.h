@@ -5,6 +5,13 @@
 
 int ini_init();
 void ini_exit();
-int ini_getParameter(const char* param);
+
+int ini_getInt(const char* param);
+
+//ini_getString:
+// Will return NULL if param cannot be found in the INI file
+// If param is found in the INI file, the returned string will
+// need to be freed with free(returnedString);
+char* ini_getString(const char* param);
 
 #endif

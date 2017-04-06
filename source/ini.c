@@ -34,7 +34,7 @@ void ini_exit()
     fclose(iniFp);
 }
 
-int ini_getParameter(const char* param)
+int ini_getInt(const char* param)
 {
     if (!iniFp)
     {
@@ -69,4 +69,45 @@ int ini_getParameter(const char* param)
     
     printLog(1, "Error: Could not find \"%s\" in .ini file\n", param);
     return 0;
+}
+
+char* ini_getString(const char* param)
+{
+    if (!iniFp)
+    {
+        printLog(1, "Error: iniFp is NULL\n");
+        return NULL;
+    }
+    if (strlen(param) > 255)
+        return NULL;
+
+    char* paramSearch;
+    char* ret;
+    
+    paramSearch = (char*)malloc(strlen(param)+2);
+    if (!paramSearch)
+        return NULL;
+        
+    ret = (char*)malloc(256);
+    if (!paramSearch)
+        return NULL;
+        
+    strcpy(paramSearch, param);
+    strcat(paramSearch, "=");
+    
+    fseek(iniFp, 0, SEEK_SET);
+    while (!feof(iniFp))
+    {
+        char iniLine[256];
+        fgets(iniLine, 256, iniFp);
+        
+        if (!strncmp(iniLine, paramSearch, strlen(paramSearch)))
+        {
+            strncpy(ret, iniLine+strlen(paramSearch), strlen(iniLine+strlen(paramSearch)));
+            return ret;
+        }
+    }
+    
+    printLog(1, "Error: Could not find \"%s\" in .ini file\n", param);
+    return NULL;
 }

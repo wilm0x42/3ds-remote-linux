@@ -1,6 +1,7 @@
 #ifndef _NANOJPEG_H
 #define _NANOJPEG_H
 
+//This is here purely so that github doesn't mistake this file for obj-c
 #ifdef _HACK_REQUIRING_PREPROCESSOR_MEMES
 #include <stdio.h>
 #endif
