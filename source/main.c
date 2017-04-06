@@ -18,11 +18,10 @@
 
 #include "global.h"
 #include "net.h"
+#include "gfx.h"
 #include "ini.h"
 
 #include "nanojpeg.h"
-
-#include "gfx/gfx_background.h"
 
 
 #define TOP_WIDTH 400
@@ -36,7 +35,9 @@
 
 int main(int argc, char **argv)
 {
-    gfxInitDefault();
+    //gfxInitDefault();
+    gfxInit(GSP_BGR8_OES, GSP_RGB565_OES, false);
+    gfxSetScreenFormat(GFX_BOTTOM, GSP_RGB565_OES);
     atexit(gfxExit);
     
     PrintConsole consoleOut;
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 		hidCircleRead(&cPos);
 		
 		
-		memcpy(fbBottom, gfx_background, BOTTOM_FB_SIZE);
+		gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
 	
         printLog(1, "Receiving frame...\n");
         if (getFrame(sock, fbTop, TOP_WIDTH, TOP_HEIGHT))
