@@ -13,13 +13,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <3ds.h>
+
 #include "global.h"
+#include "video.h"
 #include "net.h"
 #include "ini.h"
-
-#include "nanojpeg.h"
-
-#include <3ds.h>
 
 
 #define SOC_ALIGN       0x1000
@@ -60,7 +59,7 @@ void net_init()
     sa.sin_family = AF_INET;// The address is IPv4
     char* serverIpAddress = ini_getString("serveraddr");
     if (serverIpAddress)
-        sa.sin_addr.s_addr = inet_addr(serverIpAddress);
+        sa.sin_addr.s_addr = inet_addr("10.0.0.2");
     else
         failExit("Error: \"serveraddr\" MUST be within the .ini file!\n");
     free(serverIpAddress);
@@ -71,8 +70,9 @@ void net_init()
 
 void net_exit()
 {
+    printLog(0, "net_exit()...\n");
     close(sock);
-    printf("waiting for socExit...\n");
+    printLog(0, "waiting for socExit...\n");
 	socExit();
 }
 
@@ -154,6 +154,7 @@ bool getFrame(int sock, u8* fb, int s_w, int s_h)
     printf("Done\n");
         
     uint16_t fileSize = 0, chunkSize = 0, chunkCount = 0, fileId = 0;
+    unsigned char fileType = 0;
         
     printf("Receiving file header...\n");
     int attempts;
@@ -161,15 +162,15 @@ bool getFrame(int sock, u8* fb, int s_w, int s_h)
     {
     	usleep(50000);
         printf("Loop (%d)\n", errno);
-        char recvBuf[9];
-        memset(recvBuf, 0xFF, 9);
-        int recvSize = recv(sock, recvBuf, 9, MSG_DONTWAIT);
+        char recvBuf[10];
+        memset(recvBuf, 0xFF, 10);
+        int recvSize = recv(sock, recvBuf, 10, MSG_DONTWAIT);
         if (recvSize < 0)
         {
-            printLog(2, "Failed to receive file update. (%d == %s)\n", errno, strerror(errno));
+            printf("Failed to receive file update. (%d == %s)\n", errno, strerror(errno));
             return false;
         }
-        if (recvSize == 9 && recvBuf[0] == 0x01)
+        if (recvSize == 10 && recvBuf[0] == 0x01)
         {
             printf("Successfully received file header\n");
             memcpy(&fileSize, recvBuf+1, 2);
@@ -180,6 +181,7 @@ bool getFrame(int sock, u8* fb, int s_w, int s_h)
             chunkCount = ntohs(chunkCount);
             memcpy(&fileId, recvBuf+7, 2);
             fileId = ntohs(fileId);
+            fileType = recvBuf[9];
             break;
         }
         else if (recvSize > 0)
@@ -191,13 +193,13 @@ bool getFrame(int sock, u8* fb, int s_w, int s_h)
         	continue;
     }
     printf("Done\n");
-    printf("Got file header: %hu, %hu, %hu, %hu\n", fileSize, chunkSize, chunkCount, fileId);
+    printf("Got file header: %hu, %hu, %hu, %hu, %hhu\n", fileSize, chunkSize, chunkCount, fileId, fileType);
         
     char* fileBuf = (char*)malloc(chunkCount*chunkSize);
     if (!fileBuf)
     {
         printf("FATAL: malloc() failed. (%d)\n", errno);
-        exit(1);
+        failExit("Malloc failed");
     }
     bool chunks[chunkCount];
     memset(chunks, 0, sizeof(chunks));
@@ -226,38 +228,28 @@ bool getFrame(int sock, u8* fb, int s_w, int s_h)
         
     if (allChunks(chunks, chunkCount, NULL))
     {
-    	printf("Decoding...\n");
-    	bool decodeFail = false;
-		if (njDecode(fileBuf, fileSize))
-		{
-        	free(fileBuf);
-        	printf("Error decoding jpeg\n");
-        	decodeFail = true;
-    	}
-    	printf("Done\n");
-        free(fileBuf);
-        
-        printf("Copying to fb...\n");
-        if (njGetWidth() == s_h && njGetHeight() == s_w
-            && njIsColor() && !decodeFail)
-        {
-        	memcpy(fb, njGetImage(), njGetImageSize());
-        }
-        else printf("Error decoding image (%dx%d, %s)\n",
-		            njGetWidth(),
-		            njGetHeight(),
-		            (decodeFail)? "fail": "success");
-        printf("Done\n");
-        
-        njDone();
-        
         u16 sendFileId = htons(fileId);
         char fileReceivedBuf[3];
         fileReceivedBuf[0] = 0x03;//code
         memcpy(fileReceivedBuf+1, &sendFileId, 2);
         send(sock, fileReceivedBuf, 3, 0);
         
-        return true;
+        bool decodeSuccess = true;
+    	printf("Decoding...\n");
+    	
+    	if (fileType == FTYPE_JPG)
+    	{
+    	    decodeSuccess = !video_decodeJpg(fileBuf, fileSize, fb, s_w, s_h);
+    	}
+    	else if (fileType == FTYPE_PNG)
+    	{
+    	    decodeSuccess = !video_decodePng(fileBuf, fileSize, fb, s_w, s_h);
+    	}
+    	
+    	printf("Done.\n");
+    	free(fileBuf);
+        
+        return decodeSuccess;
     }
     
     return false;

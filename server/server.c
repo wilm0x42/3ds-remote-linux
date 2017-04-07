@@ -10,10 +10,14 @@
 
 #define CHUNKSIZE 600
 
+#define FTYPE_JPG 0
+#define FTYPE_PNG 1
+
 
 char* fileData = NULL;
 long int fileSize = 0;
 uint16_t fileId = 0;
+char fileType = FTYPE_JPG;
 
 
 long int loadFile(char** buf, const char* filename)
@@ -50,8 +54,17 @@ void updateFile()
 {
     fileId++;
     free(fileData);
-    int ret = system("./getScreencap.sh");
-    fileSize = loadFile(&fileData, "work/frame.jpg");
+    char command[256];
+    char fileParam[16];
+    snprintf(fileParam, 16, "%d", fileType);
+    strcpy(command, "./getScreencap.sh ");
+    strncat(command, fileParam, 255);
+    int ret = system(command);
+    if (fileType == FTYPE_JPG)
+        fileSize = loadFile(&fileData, "work/frame.jpg");
+    else if (fileType == FTYPE_PNG)
+        fileSize = loadFile(&fileData, "work/frame.png");
+    
     if (!fileSize || !fileData)
         return;
 }
@@ -61,7 +74,7 @@ int doUpdateFileRequest(int sock)
     uint16_t chunkCount = fileSize / CHUNKSIZE;
     if (fileSize % CHUNKSIZE) chunkCount++;
     
-    char sendBuf[9];// u16 filesize, u16 chunksize, u16 chunkcount, u16 fileid
+    char sendBuf[10];// u16 filesize, u16 chunksize, u16 chunkcount, u16 fileid, u8 fileType
     memset(sendBuf, 0, sizeof(sendBuf));
     uint16_t sendFilesize = htons(fileSize),
              sendChunksize = htons(CHUNKSIZE),
@@ -72,6 +85,7 @@ int doUpdateFileRequest(int sock)
     memcpy(sendBuf+1+2, &sendChunksize, 2);
     memcpy(sendBuf+1+4, &sendChunkcount, 2);
     memcpy(sendBuf+1+6, &sendFileid, 2);
+    sendBuf[9] = fileType;
     
    return send(sock, sendBuf, sizeof(sendBuf), 0);
 }
@@ -111,7 +125,7 @@ void getMouseStr(char m, char* buf, int maxlen)
     if (m & 0x04) strncat(buf, "\"mouseclick 1\" \"mouseclick 1\" ", maxlen);//double lclick
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
     int sock;
     struct sockaddr_in sa;
@@ -132,6 +146,15 @@ int main(void)
         perror("error bind failed");
         close(sock);
         exit(EXIT_FAILURE);
+    }
+    
+    if (argc > 1)
+    {
+        if (!strcmp(argv[1], "-png"))
+        {
+            printf("Using PNG encoding\n");
+            fileType = FTYPE_PNG;
+        }
     }
     
     updateFile();
@@ -164,7 +187,7 @@ int main(void)
         {
             printf("Fulfilling File Update Request\n");
             doUpdateFileRequest(sock);
-            printf("Sent: %lu, %u, %lu, %hu\n", fileSize, CHUNKSIZE, fileSize / CHUNKSIZE+1, fileId);
+            printf("Sent: %lu, %u, %lu, %hu, %hhu\n", fileSize, CHUNKSIZE, fileSize / CHUNKSIZE+1, fileId, fileType);
             printf("Done\n");
             break;
         }

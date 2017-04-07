@@ -31,6 +31,7 @@ int ini_init()
 
 void ini_exit()
 {
+    printLog(0, "ini_exit...\n");
     fclose(iniFp);
 }
 

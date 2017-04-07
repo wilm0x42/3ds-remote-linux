@@ -7,7 +7,6 @@
 #include <stdarg.h>
 
 #include <fcntl.h>
-
 #include <sys/types.h>
 
 #include <sys/socket.h>
@@ -20,8 +19,7 @@
 #include "net.h"
 #include "gfx.h"
 #include "ini.h"
-
-#include "nanojpeg.h"
+#include "video.h"
 
 
 #define TOP_WIDTH 400
@@ -35,7 +33,6 @@
 
 int main(int argc, char **argv)
 {
-    //gfxInitDefault();
     gfxInit(GSP_BGR8_OES, GSP_RGB565_OES, false);
     gfxSetScreenFormat(GFX_BOTTOM, GSP_RGB565_OES);
     atexit(gfxExit);
@@ -50,20 +47,21 @@ int main(int argc, char **argv)
 	
 	gfxSetDoubleBuffering(GFX_BOTTOM, false);
 	u8* fbBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
-	memset(fbBottom, 0xFF, BOTTOM_FB_SIZE);
+	memset(fbBottom, 0xff, BOTTOM_FB_SIZE);
 	
+	atexit(pauseExit);
 
     ini_init();//Initialize ini handler
     atexit(ini_exit);
     
+    logging_verbosity = ini_getInt("loggingVerbosity");
+    
     net_init();//Initialize net
     atexit(net_exit);
-	
-    njInit();//Initialize NanoJpeg
     
-    atexit(pauseExit);
+    video_init();
 
-    printLog(0, "Entering main loop...\n");
+    printLog(1, "Entering main loop...\n");
 	while (aptMainLoop())
 	{
 		hidScanInput();
@@ -76,16 +74,15 @@ int main(int argc, char **argv)
 		
 		gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
 	
-        printLog(1, "Receiving frame...\n");
+        printLog(2, "Receiving frame...\n");
         if (getFrame(sock, fbTop, TOP_WIDTH, TOP_HEIGHT))
-            printLog(1, "\x1b[32mSuccess\x1b[37m\n");
+            printLog(2, "\x1b[32mSuccess\x1b[37m\n");
         else
-            printLog(1, "\x1b[31mFailure\x1b[37m\n");
+            printLog(2, "\x1b[31mFailure\x1b[37m\n");
         
         if (kDown & KEY_START)
         {
-            close(sock);
-            exit(0);
+            break;
         }
         
         u8 mouseBtns = 0;
@@ -132,5 +129,5 @@ int main(int argc, char **argv)
 	}
 	
 	printLog(0, "Exiting...\n");
-	return 0;
+	exit(0);
 }

@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "net.h"
-
 #include <3ds.h>
 
 int logging_verbosity = 1;
@@ -52,7 +50,6 @@ void failExit(const char* msg)
 		u32 kDown = hidKeysDown();
 		if (kDown & KEY_START) break;
 	}
-	close(sock);
 	exit(0);
 }
 
@@ -68,6 +65,5 @@ void pauseExit()
 		u32 kDown = hidKeysDown();
 		if (kDown & KEY_START) break;
 	}
-	close(sock);
 	exit(0);
 }
