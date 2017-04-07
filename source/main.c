@@ -90,7 +90,7 @@ int main(int argc, char **argv)
         if (kDown & KEY_Y) mouseBtns |= 0x02;//r
         if (kDown & KEY_B) mouseBtns |= 0x04;//double l
         s16 sendX, sendY;
-        int divide = (kHeld & KEY_X)? 4: 8;
+        int divide = (kHeld & KEY_X)? 2: 5;
         sendX = (cPos.dx>15||cPos.dx<-15)?cPos.dx/divide : 0,
         sendY = (cPos.dy>15||cPos.dy<-15)?cPos.dy/divide : 0,
         printf("Sending mouse event: %hd, %hd, %hhu\n", sendX, sendY, mouseBtns);

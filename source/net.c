@@ -243,7 +243,8 @@ bool getFrame(int sock, u8* fb, int s_w, int s_h)
     	}
     	else if (fileType == FTYPE_PNG)
     	{
-    	    decodeSuccess = !video_decodePng(fileBuf, fileSize, fb, s_w, s_h);
+    	    //note that w and h are reversed here. It just works.
+    	    decodeSuccess = !video_decodePng(fileBuf, fileSize, fb, s_h, s_w);
     	}
     	
     	printf("Done.\n");

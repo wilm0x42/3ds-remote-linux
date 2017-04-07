@@ -33,6 +33,12 @@ long int loadFile(char** buf, const char* filename)
     long int fsize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     
+    if (buf == NULL)
+    {
+        fclose(fp);
+        return fsize;
+    }
+    
     *buf = (char*)malloc(fsize);
     if (!*buf)
     {
@@ -54,16 +60,33 @@ void updateFile()
 {
     fileId++;
     free(fileData);
-    char command[256];
+    /*char command[256];
     char fileParam[16];
     snprintf(fileParam, 16, "%d", fileType);
     strcpy(command, "./getScreencap.sh ");
     strncat(command, fileParam, 255);
     int ret = system(command);
+    
     if (fileType == FTYPE_JPG)
         fileSize = loadFile(&fileData, "work/frame.jpg");
     else if (fileType == FTYPE_PNG)
+        fileSize = loadFile(&fileData, "work/frame.png");*/
+        
+    fileType = FTYPE_PNG;
+    int ret = system("./getScreencap.sh 1");
+    fileSize = loadFile(NULL, "work/frame.png");
+    
+    if (fileSize > (15*1024))
+    {
+        printf("PNG is too big. Sending jpeg instead.\n");
+        fileType = FTYPE_JPG;
+        ret = system("./getScreencap.sh 0");
+        fileSize = loadFile(&fileData, "work/frame.jpg");
+    }
+    else
+    {
         fileSize = loadFile(&fileData, "work/frame.png");
+    }
     
     if (!fileSize || !fileData)
         return;
@@ -148,15 +171,8 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
     
-    if (argc > 1)
-    {
-        if (!strcmp(argv[1], "-png"))
-        {
-            printf("Using PNG encoding\n");
-            fileType = FTYPE_PNG;
-        }
-    }
-    
+    if (!remove("work/prevframe.png"))
+        printf("Removed work/prevframe.png\n");
     updateFile();
 
     printf("Waiting for client...\n");
