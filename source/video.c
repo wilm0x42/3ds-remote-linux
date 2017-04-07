@@ -14,6 +14,10 @@
 #include "lodepng.h"
 
 
+unsigned char video_quality = 10;
+unsigned char video_mode = 0;
+
+
 void video_init()
 {
     njInit();//Initialize NanoJpeg

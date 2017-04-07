@@ -7,17 +7,26 @@
 #include <unistd.h> /* for close() for socket */
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define CHUNKSIZE 600
 
 #define FTYPE_JPG 0
 #define FTYPE_PNG 1
 
+#define MODE_DYNAMIC 0
+#define MODE_STATIC 1
+
 
 char* fileData = NULL;
 long int fileSize = 0;
 uint16_t fileId = 0;
 char fileType = FTYPE_JPG;
+unsigned char fileQuality = 10;
+
+char clientMode = MODE_DYNAMIC;
+
+bool logChunks = false;
 
 
 long int loadFile(char** buf, const char* filename)
@@ -60,18 +69,24 @@ void updateFile()
 {
     fileId++;
     free(fileData);
-    /*char command[256];
-    char fileParam[16];
-    snprintf(fileParam, 16, "%d", fileType);
-    strcpy(command, "./getScreencap.sh ");
-    strncat(command, fileParam, 255);
-    int ret = system(command);
     
-    if (fileType == FTYPE_JPG)
+    //Static mode
+    if (clientMode == MODE_STATIC)
+    {
+        char command[256];
+        char param[16];
+        snprintf(param, 16, "%hhu", fileQuality);
+        strcpy(command, "./getScreencap.sh 0 ");
+        strncat(command, param, 255);
+        int ret = system(command);
+    
         fileSize = loadFile(&fileData, "work/frame.jpg");
-    else if (fileType == FTYPE_PNG)
-        fileSize = loadFile(&fileData, "work/frame.png");*/
+        fileType = FTYPE_JPG;
         
+        return;
+    }
+        
+    //Dynamic mode
     fileType = FTYPE_PNG;
     int ret = system("./getScreencap.sh 1");
     fileSize = loadFile(NULL, "work/frame.png");
@@ -87,9 +102,6 @@ void updateFile()
     {
         fileSize = loadFile(&fileData, "work/frame.png");
     }
-    
-    if (!fileSize || !fileData)
-        return;
 }
 
 int doUpdateFileRequest(int sock)
@@ -174,11 +186,17 @@ int main(int argc, char** argv)
     if (!remove("work/prevframe.png"))
         printf("Removed work/prevframe.png\n");
     updateFile();
+    
+    if (argc > 1)
+    {
+        if (!strcmp(argv[1], "-logchunks"))
+            logChunks = true;
+    }
 
     printf("Waiting for client...\n");
     while (1)
     {
-        printf("Loop\n");
+        //printf("Loop\n");
         usleep(1000);
         recvsize = recvfrom(sock, (void*)recvBuf, sizeof(recvBuf), 0, (struct sockaddr*)&sa, &fromlen);
         if (recvsize < 0)
@@ -189,22 +207,23 @@ int main(int argc, char** argv)
         if (recvsize == 0)
             continue;
             
-        printf("Connecting... ");
+        //printf("Connecting... ");
         if (connect(sock, (struct sockaddr*)&sa, fromlen) < 0)
         {
             fprintf(stderr, "Connect failed: %s\n", strerror(errno));
             exit(1);
         }
-        printf("%d\n", errno);
+        //printf("%d\n", errno);
         
         switch (recvBuf[0])
         {
         case 0x01://file update request
         {
-            printf("Fulfilling File Update Request\n");
+            if (logChunks) printf("Fulfilling File Update Request\n");
+            fileQuality = recvBuf[1];
             doUpdateFileRequest(sock);
-            printf("Sent: %lu, %u, %lu, %hu, %hhu\n", fileSize, CHUNKSIZE, fileSize / CHUNKSIZE+1, fileId, fileType);
-            printf("Done\n");
+            if (logChunks) printf("Sent: %lu, %u, %lu, %hu, %hhu\n", fileSize, CHUNKSIZE, fileSize / CHUNKSIZE+1, fileId, fileType);
+            //printf("Done\n");
             break;
         }
         case 0x02://chunk request
@@ -214,9 +233,9 @@ int main(int argc, char** argv)
             memcpy(&rqFileId, recvBuf+3, 2);
             rqChunk = ntohs(rqChunk);
             rqFileId = ntohs(rqFileId);
-            printf("Fulfilling chunk request... (%u)\n", rqChunk);
+            if (logChunks) printf("Fulfilling chunk request... (%u)\n", rqChunk);
             doChunkRequest(sock, rqChunk, rqFileId);
-            printf("Done\n");
+            if (logChunks) printf("Done\n");
             break;
         }
         case 0x03://File Received
@@ -265,10 +284,17 @@ int main(int argc, char** argv)
             int ret = system(cmdBuf);
             break;
         }
+        case 0x06://Video mode change
+        {
+            char newMode = recvBuf[1];
+            printf("\x1b[31mChanging video mode: %hhd -> %hhd\x1b[37m\n", clientMode, newMode);
+            clientMode = newMode;
+            break;
+        }
         default:
             printf("Unknown message from client.\n");
             break;
         }
-        printf("recvsize: %d\n ", (int)recvsize);
+        //printf("recvsize: %d\n ", (int)recvsize);
     }
 }

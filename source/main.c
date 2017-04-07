@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	
 	gfxSetDoubleBuffering(GFX_BOTTOM, false);
 	u8* fbBottom = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
-	memset(fbBottom, 0xff, BOTTOM_FB_SIZE);
+	memset(fbBottom, 0, BOTTOM_FB_SIZE);
 	
 	atexit(pauseExit);
 
@@ -71,7 +71,23 @@ int main(int argc, char **argv)
 		circlePosition cPos;
 		hidCircleRead(&cPos);
 		
+		touchPosition tPos;
+		hidTouchRead(&tPos);
 		
+		
+	    if (pointInRect(tPos.px, tPos.py, 152, 64, 72, 24) && kDown & KEY_TOUCH)
+	    {
+	        printLog(1, "Video mode: Dynamic\n");
+	        video_mode = MODE_DYNAMIC;
+	        net_sendVideoMode();
+	    }
+	    if (pointInRect(tPos.px, tPos.py, 232, 64, 72, 24) && kDown & KEY_TOUCH)
+	    {
+	        printLog(1, "Video mode: Static\n");
+	        video_mode = MODE_STATIC;
+	        net_sendVideoMode();
+	    }
+	
 		gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
 	
         printLog(2, "Receiving frame...\n");

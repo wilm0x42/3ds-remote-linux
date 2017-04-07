@@ -142,9 +142,9 @@ bool requestChunk(int sock, char* buf, uint16_t chunkSize, uint16_t whichChunk, 
 
 bool getFrame(int sock, u8* fb, int s_w, int s_h)
 {
-    char fileUpdateRqCode = 0x01;
+    char fileUpdateRq[] = {0x01, video_quality};//code, quality
     printf("Sending file update request...\n");
-    int bytesSent = send(sock, &fileUpdateRqCode, 1, 0);
+    int bytesSent = send(sock, &fileUpdateRq, sizeof(fileUpdateRq), 0);
     if (bytesSent < 0)
     {
         printf("Error sending packet: %s\n", strerror(errno));
@@ -272,4 +272,10 @@ void sendMouseEvent(int sock, s16 x, s16 y, char click)
     sendBuf[1+2+2] = click;
     
     send(sock, sendBuf, sizeof(sendBuf), 0);
+}
+
+void net_sendVideoMode()
+{
+    char rq[] = {0x6, video_mode};
+    send(sock, rq, sizeof(rq), 0);
 }
