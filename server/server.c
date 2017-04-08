@@ -91,7 +91,7 @@ void updateFile()
     int ret = system("./getScreencap.sh 1");
     fileSize = loadFile(NULL, "work/frame.png");
     
-    if (fileSize > (15*1024))
+    if (fileSize > (20*1024))
     {
         printf("PNG is too big. Sending jpeg instead.\n");
         fileType = FTYPE_JPG;

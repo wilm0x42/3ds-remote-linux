@@ -87,8 +87,26 @@ int main(int argc, char **argv)
 	        video_mode = MODE_STATIC;
 	        net_sendVideoMode();
 	    }
-	
-		gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
+	    
+	    if (pointInRect(tPos.px, tPos.py, 8, 8, 304, 16) && kHeld & KEY_TOUCH)
+	    {
+	        float normalized = (((float)tPos.px - 8) / 304);
+	        video_quality = normalized * 100;
+	        printLog(1, "Video quality: %hhu\n", video_quality);
+	    }
+	    
+	    gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
+	    
+	    rect_t fillRect;
+	    float normalized = ((float)video_quality / 100);
+	    fillRect.x = BOTTOM_HEIGHT - 20;
+	    fillRect.y = (normalized * 304) + 4;
+	    fillRect.w = 8;
+	    fillRect.h = 8;
+	    color_t fillColor = {255, 255, 255};
+	    //Note the reversal of width and height
+	    gfx_fillRect565(fbBottom, BOTTOM_HEIGHT, BOTTOM_WIDTH, fillRect, fillColor);
+	    
 	
         printLog(2, "Receiving frame...\n");
         if (getFrame(sock, fbTop, TOP_WIDTH, TOP_HEIGHT))

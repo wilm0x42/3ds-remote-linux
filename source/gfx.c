@@ -5,6 +5,7 @@
 #include <3ds.h>
 
 #include "global.h"
+#include "gfx.h"
 
 #include "gfx/gfx_background.h"
 
@@ -41,6 +42,18 @@ void gfx_cpyRgbaToRgb(u8* rgba, u8* rgb, int w, int h)
         rgb[n*3  ] = (rgb[n*3  ] * (1 - (rgba[(n*4)+3] / 0xFF))) + (rgba[(n*4)  ] * (rgba[(n*4)+3] / 0xFF));//r
         rgb[n*3+1] = (rgb[n*3+1] * (1 - (rgba[(n*4)+3] / 0xFF))) + (rgba[(n*4)+1] * (rgba[(n*4)+3] / 0xFF));//g
         rgb[n*3+2] = (rgb[n*3+2] * (1 - (rgba[(n*4)+3] / 0xFF))) + (rgba[(n*4)+2] * (rgba[(n*4)+3] / 0xFF));//b
+    }
+}
+
+void gfx_fillRect565(u8* rgb, int w, int h, rect_t r, color_t c)
+{
+    u16 pixel = RGB8_to_565(c.r, c.g, c.b);
+    for (int x = r.x; x < r.x + r.w; x++)
+    {
+        for (int y = r.y; y < r.y + r.h; y++)
+        {
+            memcpy(rgb + ((y*w) + x)*2, &pixel, 2);
+        }
     }
 }
 

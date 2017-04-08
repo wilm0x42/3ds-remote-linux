@@ -5,4 +5,5 @@
 /server/server
 /server/work/*.jpg
 /server/work/*.bmp
+/server/work/*.png
 .Trash-1000
