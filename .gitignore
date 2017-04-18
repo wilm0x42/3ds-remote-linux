@@ -4,5 +4,5 @@
 *.elf
 /server/server
 /server/work/*
-!/server/work/.gitignore
+!/server/work/.gitkeep
 .Trash-1000

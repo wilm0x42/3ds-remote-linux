@@ -6,6 +6,7 @@
 
 #include "global.h"
 #include "gfx.h"
+#include "video.h"
 
 #include "gfx/gfx_background.h"
 
@@ -60,4 +61,15 @@ void gfx_fillRect565(u8* rgb, int w, int h, rect_t r, color_t c)
 void gfx_renderMenu(u8* fb, int w, int h)
 {
     gfx_cpyRgbaToRgb565(gfx_background, fb, w, h);
+    
+    rect_t fillRect;
+	float normalized = ((float)video_quality / 100);
+	fillRect.x = h - 20;
+	fillRect.y = (normalized * 304) + 4;
+	fillRect.w = 8;
+	fillRect.h = 8;
+	color_t fillColor;
+	memset(&fillColor, 0xff, sizeof(fillColor));
+	//Note the reversal of width and height
+    gfx_fillRect565(fb, h, w, fillRect, fillColor);
 }

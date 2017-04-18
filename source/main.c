@@ -95,17 +95,8 @@ int main(int argc, char **argv)
 	        printLog(1, "Video quality: %hhu\n", video_quality);
 	    }
 	    
-	    gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
 	    
-	    rect_t fillRect;
-	    float normalized = ((float)video_quality / 100);
-	    fillRect.x = BOTTOM_HEIGHT - 20;
-	    fillRect.y = (normalized * 304) + 4;
-	    fillRect.w = 8;
-	    fillRect.h = 8;
-	    color_t fillColor = {255, 255, 255};
-	    //Note the reversal of width and height
-	    gfx_fillRect565(fbBottom, BOTTOM_HEIGHT, BOTTOM_WIDTH, fillRect, fillColor);
+	    gfx_renderMenu(fbBottom, BOTTOM_WIDTH, BOTTOM_HEIGHT);
 	    
 	
         printLog(2, "Receiving frame...\n");
@@ -153,6 +144,7 @@ int main(int argc, char **argv)
                 
             printLog(0, "Logging verbosity: %d\n", logging_verbosity);
         }
+        
 
         // Flush and swap framebuffers
 		gfxFlushBuffers();

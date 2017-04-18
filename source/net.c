@@ -58,11 +58,12 @@ void net_init()
     
     sa.sin_family = AF_INET;// The address is IPv4
     char* serverIpAddress = ini_getString("serveraddr");
+    printLog(1, "Server IP: %s\n", serverIpAddress);
     if (serverIpAddress)
-        sa.sin_addr.s_addr = inet_addr("10.0.0.2");
+        sa.sin_addr.s_addr = inet_addr(serverIpAddress);
     else
         failExit("Error: \"serveraddr\" MUST be within the .ini file!\n");
-    free(serverIpAddress);
+
     sa.sin_port = htons(ini_getInt("port"));
     if (connect(sock, (struct sockaddr*)&sa, sizeof(sa)))
         failExit("connect() Failed");

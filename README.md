@@ -28,7 +28,33 @@ Packages required:
  * xautomation
 `sudo apt-get install imagemagick xdotool xautomation`
 
-## Controls
+## Building
+The client requires devkitARM and ctrulib. To compile, just
+enter `make` in the root of the repository.
+
+To compile the server, just enter `make` in the "server" folder.
+The server only needs the cstdlib, and BSD sockets for compilation.
+However, the packages listed above are required at runtime.
+
+## Usage
+### Startup
+ 1. Make sure port 55550 UDP isn't blocked by a firewall. (`sudo ufw allow 55550/udp`)
+ 2. Start the server, from within the server folder. (`cd server; ./server`)
+ 3. Enter your IP address into the "serveraddr" field of 3ds-remote-linux.ini
+ 4. Place 3ds-remote-linux.ini on your SD card in: "3ds/3ds-remote-linux/3ds-remote-linux.ini"
+ 5. Start 3ds-remote-linux on your 3ds.
+ 
+### GUI
+ Tap the buttons labeled under "Video mode," to switch between dynamic, and static compression.
+ 
+ Dynamic compression is ideal for tasks like web browsing, or anything where
+ the screen isn't changing to quickly.
+ Static compresssion is best suited for watching videos, or perhaps gaming.
+ 
+ When using static compression, the slider labeled "Video quality" can
+ be used to set the JPEG quality.
+
+### Controls
 Input        | Action
 -------------|-------------
 A            | Left Click

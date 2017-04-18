@@ -104,7 +104,8 @@ char* ini_getString(const char* param)
         
         if (!strncmp(iniLine, paramSearch, strlen(paramSearch)))
         {
-            strncpy(ret, iniLine+strlen(paramSearch), strlen(iniLine+strlen(paramSearch)));
+            strncpy(ret, iniLine+strlen(paramSearch), strlen(iniLine+strlen(paramSearch)) - 1);
+            ret[strlen(iniLine+strlen(paramSearch))] = 0;
             return ret;
         }
     }
