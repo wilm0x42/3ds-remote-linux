@@ -3,7 +3,6 @@
 *.smdh
 *.elf
 /server/server
-/server/work/*.jpg
-/server/work/*.bmp
-/server/work/*.png
+/server/work/*
+!/server/work/.gitignore
 .Trash-1000
