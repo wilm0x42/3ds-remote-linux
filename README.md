@@ -48,7 +48,7 @@ However, the packages listed above are required at runtime.
  Tap the buttons labeled under "Video mode," to switch between dynamic, and static compression.
  
  Dynamic compression is ideal for tasks like web browsing, or anything where
- the screen isn't changing to quickly.
+ the screen isn't changing very quickly.
  Static compresssion is best suited for watching videos, or perhaps gaming.
  
  When using static compression, the slider labeled "Video quality" can
